@@ -119,9 +119,10 @@ use tiny_keccak::{Hasher, Sha3};
 pub(crate) const STARCOIN_HASH_PREFIX: &[u8] = b"STARCOIN::";
 
 /// Output value of our hash function. Intentionally opaque for safety and modularity.
-#[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord,schemars::JsonSchema)]
 #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct HashValue {
+    #[schemars(with = "String")]
     hash: [u8; HashValue::LENGTH],
 }
 

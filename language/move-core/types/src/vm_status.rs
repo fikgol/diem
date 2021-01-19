@@ -11,7 +11,7 @@ use proptest::prelude::*;
 use proptest_derive::Arbitrary;
 use serde::{de, ser, Deserialize, Serialize};
 use std::{convert::TryFrom, fmt};
-
+use schemars::JsonSchema;
 /// The minimum status code for validation statuses
 pub static VALIDATION_STATUS_MIN_CODE: u64 = 0;
 
@@ -46,7 +46,7 @@ pub static EXECUTION_STATUS_MAX_CODE: u64 = 4999;
 /// - `Executed` indicating successful execution
 /// - `Error` indicating an error from the VM itself
 /// - `MoveAbort` indicating an `abort` ocurred inside of a Move program
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, JsonSchema)]
 #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 #[cfg_attr(any(test, feature = "fuzzing"), proptest(no_params))]
 pub enum VMStatus {
@@ -90,7 +90,7 @@ pub type DiscardedVMStatus = StatusCode;
 
 /// An `AbortLocation` specifies where a Move program `abort` occurred, either in a function in
 /// a module, or in a script
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,JsonSchema)]
 #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 #[cfg_attr(any(test, feature = "fuzzing"), proptest(no_params))]
 pub enum AbortLocation {
@@ -325,6 +325,7 @@ pub mod known_locations {
     /// The ModuleId for the Account module.
     pub static ACCOUNT_MODULE: Lazy<ModuleId> =
         Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, ACCOUNT_MODULE_IDENTIFIER.clone()));
+
     /// Location for an abort in the Account module
     pub fn account_module_abort() -> AbortLocation {
         AbortLocation::Module(ACCOUNT_MODULE.clone())
@@ -338,6 +339,7 @@ pub mod known_locations {
     /// The ModuleId for the Diem module.
     pub static DIEM_MODULE: Lazy<ModuleId> =
         Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, DIEM_MODULE_IDENTIFIER.clone()));
+
     pub fn diem_module_abort() -> AbortLocation {
         AbortLocation::Module(DIEM_MODULE.clone())
     }
@@ -354,6 +356,7 @@ pub mod known_locations {
             DESIGNATED_DEALER_MODULE_IDENTIFIER.clone(),
         )
     });
+
     pub fn designated_dealer_module_abort() -> AbortLocation {
         AbortLocation::Module(DESIGNATED_DEALER_MODULE.clone())
     }
@@ -400,7 +403,7 @@ macro_rules! derive_status_try_from_repr {
 derive_status_try_from_repr! {
 #[repr(u64)]
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord,JsonSchema)]
 /// We don't derive Arbitrary on this enum because it is too large and breaks proptest. It is
 /// written for a subset of these in proptest_types. We test conversion between this and protobuf
 /// with a hand-written test.
@@ -682,8 +685,8 @@ impl StatusCode {
 // TODO(#1307)
 impl ser::Serialize for StatusCode {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
+        where
+            S: ser::Serializer,
     {
         serializer.serialize_u64((*self).into())
     }
@@ -691,8 +694,8 @@ impl ser::Serialize for StatusCode {
 
 impl<'de> de::Deserialize<'de> for StatusCode {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: de::Deserializer<'de>,
+        where
+            D: de::Deserializer<'de>,
     {
         struct StatusCodeVisitor;
         impl<'de> de::Visitor<'de> for StatusCodeVisitor {
@@ -703,8 +706,8 @@ impl<'de> de::Deserialize<'de> for StatusCode {
             }
 
             fn visit_u64<E>(self, v: u64) -> std::result::Result<StatusCode, E>
-            where
-                E: de::Error,
+                where
+                    E: de::Error,
             {
                 Ok(StatusCode::try_from(v).unwrap_or(StatusCode::UNKNOWN_STATUS))
             }
